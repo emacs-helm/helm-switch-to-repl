@@ -1,0 +1,16 @@
+This tiny package fixes two features in upstream Helm:
+
+- Add a =helm-switch-to-shell= action which generalizes
+  =helm-ff-switch-to-shell= for any REPL (SLIME, SLY, IELM, or add your own).
+
+- Add this feature to =helm-locate= and other file related Helms.
+
+* Installation
+
+Call =helm-switch-to-repl-setup=.
+
+* Usage
+
+Fire up =helm-find-files= or other =helm-type-file= sources such as
+=helm-locate=, navigate to where you want, then call the =Switch to REPL= action
+bound to =M-e= by default.
