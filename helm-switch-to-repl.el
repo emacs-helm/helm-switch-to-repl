@@ -74,9 +74,10 @@ Conversely, Eshell need not be included."
   nil)
 
 (cl-defgeneric helm-switch-to-repl-shell-alive-p (_mode)
-  "Returns non-nil when a process is running inside buffer in given mode.")
+  "Return non-nil when a process is running inside buffer in given mode.")
 
 (defun helm-switch-to-repl--format-cd ()
+  "Return a command string to switch directly in shells."
   (format "cd %s"
           (shell-quote-argument
            (or (file-remote-p
@@ -84,13 +85,16 @@ Conversely, Eshell need not be included."
                helm-ff-default-directory))))
 
 (defun helm-switch-to-repl--has-next-prompt? (next-prompt-fn)
+  "Return non-nil if current buffer has at least one prompt.
+NEXT-PROMPT-FN is used to find the prompt."
   (save-excursion
     (goto-char (point-min))
     (funcall next-prompt-fn 1)
     (null (eql (point) (point-min)))))
 
 (defun helm-switch-to-repl (candidate)
-  "Like `helm-ff-switch-to-shell' but supports more modes."
+  "Like `helm-ff-switch-to-shell' but supports more modes.
+CANDIDATE's directory is used outside of `helm-find-files'."
   ;; `helm-ff-default-directory' is only set in `helm-find-files'.
   ;; For other `helm-type-file', use the candidate directory.
   (let ((helm-ff-default-directory (or helm-ff-default-directory
@@ -123,7 +127,7 @@ Conversely, Eshell need not be included."
       (helm-switch-to-repl-cd-repl major-mode))))
 
 (defun helm-run-switch-to-repl ()
-  "Run switch to REPL action from `helm-source-find-files' or `helm-type-file'."
+  "Run switch to REPL action from `helm-source-find-files' or `helm-type-file' sources."
   (interactive)
   (with-helm-alive-p
     (helm-exit-and-execute-action 'helm-switch-to-repl)))
@@ -131,8 +135,9 @@ Conversely, Eshell need not be included."
 
 ;;;###autoload
 (defun helm-switch-to-repl-setup ()
-  "Add `helm-switch-to-repl' action to `helm-find-files' and
-other `helm-type-file' sources such as `helm-locate'."
+  "Install `helm-switch-to-repl' actions.
+It adds it to `helm-find-files' and other `helm-type-file' sources such as
+`helm-locate'."
   (interactive)
   ;; `helm-type-file':
   (add-to-list 'helm-type-file-actions
