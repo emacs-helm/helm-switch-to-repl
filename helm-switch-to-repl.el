@@ -156,10 +156,115 @@ It adds it to `helm-find-files' and other `helm-type-file' sources such as
     (when eshell-action
       (setcar eshell-action "Switch to shell"))))
 
-(provide 'helm-switch-to-repl)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Eshell
+(declare-function eshell/cd "em-dirs.el")
+(declare-function eshell-next-prompt "em-prompt.el")
+(declare-function eshell-reset "esh-mode.el")
 
-(require 'helm-switch-to-repl-eshell-mode)
-(require 'helm-switch-to-repl-shell-mode)
-(require 'helm-switch-to-repl-sly-mrepl-mode)
-(require 'helm-switch-to-repl-term-mode)
+(cl-defmethod helm-switch-to-repl-cd-repl ((_mode (eql eshell-mode)))
+  (eshell/cd helm-ff-default-directory)
+  (eshell-reset))
+
+(cl-defmethod helm-switch-to-repl-new-repl ((_mode (eql eshell-mode)))
+  (eshell helm-current-prefix-arg))
+
+(cl-defmethod helm-switch-to-repl-interactive-buffer-p ((buffer t) (_mode (eql eshell-mode)))
+  (with-current-buffer buffer
+    (helm-switch-to-repl--has-next-prompt? #'eshell-next-prompt)))
+
+(cl-defmethod helm-switch-to-repl-shell-alive-p ((_mode (eql eshell-mode)))
+  (get-buffer-process (current-buffer)))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Shell
+(push 'shell-mode helm-switch-to-repl-delayed-execution-modes)
+
+(cl-defmethod helm-switch-to-repl-cd-repl ((_mode (eql shell-mode)))
+  (goto-char (point-max))
+  (comint-delete-input)
+  (insert (helm-switch-to-repl--format-cd))
+  (comint-send-input))
+
+(cl-defmethod helm-switch-to-repl-new-repl ((_mode (eql shell-mode)))
+  (shell (helm-aif (and helm-current-prefix-arg
+                        (prefix-numeric-value
+                         helm-current-prefix-arg))
+             (format "*shell<%s>*" it))))
+
+(cl-defmethod helm-switch-to-repl-interactive-buffer-p ((buffer t) (_mode (eql shell-mode)))
+  (with-current-buffer buffer
+    (helm-switch-to-repl--has-next-prompt? #'comint-next-prompt)))
+
+(cl-defmethod helm-switch-to-repl-shell-alive-p ((_mode (eql shell-mode)))
+  (save-excursion
+    (comint-goto-process-mark)
+    (or (null comint-last-prompt)
+        (not (eql (point)
+                  (marker-position (cdr comint-last-prompt)))))))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; SLY
+(declare-function sly-change-directory "sly.el")
+(declare-function sly "sly.el")
+
+(push 'sly-mrepl-mode helm-switch-to-repl-delayed-execution-modes)
+
+(cl-defmethod helm-switch-to-repl-cd-repl ((_mode (eql sly-mrepl-mode)))
+  (let ((directory helm-ff-default-directory))
+    (sly-change-directory directory)
+    ;; REVIEW: `sly-change-directory' does not change the
+    ;; REPL's dir, do it here.
+    (cd-absolute directory)))
+
+(cl-defmethod helm-switch-to-repl-new-repl ((_mode (eql sly-repl-mode)))
+  (sly))
+
+(cl-defmethod helm-switch-to-repl-interactive-buffer-p ((buffer t)
+                                                        (_mode (eql sly-mrepl-mode)))
+  (with-current-buffer buffer
+    (helm-switch-to-repl--has-next-prompt? #'comint-next-prompt)))
+
+(cl-defmethod helm-switch-to-repl-shell-alive-p ((_mode (eql sly-mrepl-mode)))
+  (helm-switch-to-repl-shell-alive-p 'shell-mode))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Term
+(declare-function term-char-mode "term.el")
+(declare-function term-line-mode "term.el")
+(declare-function term-send-input "term.el")
+(declare-function term-next-prompt "term.el")
+(declare-function term-process-mark "term.el")
+
+(push 'term-mode helm-switch-to-repl-delayed-execution-modes)
+
+(cl-defmethod helm-switch-to-repl-cd-repl ((_mode (eql term-mode)))
+  (goto-char (point-max))
+  (insert (helm-switch-to-repl--format-cd))
+  (term-char-mode)
+  (term-send-input))
+
+(cl-defmethod helm-switch-to-repl-new-repl ((_mode (eql term-mode)))
+  (ansi-term (getenv "SHELL")
+             (helm-aif (and helm-current-prefix-arg
+                            (prefix-numeric-value
+                             helm-current-prefix-arg))
+                 (format "*ansi-term<%s>*" it)))
+  (term-line-mode))
+
+(cl-defmethod helm-switch-to-repl-interactive-buffer-p ((buffer t) (_mode (eql term-mode)))
+  (with-current-buffer buffer
+    (helm-switch-to-repl--has-next-prompt? #'term-next-prompt)))
+
+(cl-defmethod helm-switch-to-repl-shell-alive-p ((_mode (eql term-mode)))
+  (save-excursion
+    (goto-char (term-process-mark))
+    (not (looking-back "\\$ " (- (point) 2)))))
+
+
+(provide 'helm-switch-to-repl)
 ;;; helm-switch-to-repl.el ends here
