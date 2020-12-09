@@ -5,7 +5,7 @@
 ;; Author: Pierre Neidhardt <mail@ambrevar.xyz>
 ;; Maintainer: Pierre Neidhardt <mail@ambrevar.xyz>
 ;; URL: https://github.com/emacs-helm/helm-switch-to-repl
-;; Version: 0.0.0
+;; Version: 0.1.0
 ;; Package-Requires: ((emacs "26.1") (helm "3"))
 
 ;; This file is not part of GNU Emacs.
