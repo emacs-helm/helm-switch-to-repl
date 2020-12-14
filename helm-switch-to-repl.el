@@ -186,7 +186,11 @@ It adds it to `helm-find-files' and other `helm-type-file' sources such as
   (goto-char (point-max))
   (comint-delete-input)
   (insert (helm-switch-to-repl--format-cd))
-  (comint-send-input))
+  (comint-send-input)
+  ;; While `shell-directory-tracker' is supposed to automatically set
+  ;; `default-directory' for us, it fails on directories like "foo & bar".  Also
+  ;; see `shell-command-regexp'.
+  (cd helm-ff-default-directory))
 
 (cl-defmethod helm-switch-to-repl-new-repl ((_mode (eql shell-mode)))
   (shell (helm-aif (and helm-current-prefix-arg
