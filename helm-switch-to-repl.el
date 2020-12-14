@@ -105,7 +105,7 @@ CANDIDATE's directory is used outside of `helm-find-files'."
         ;; command in term buffer.
         term-char-mode-buffer-read-only ; Emacs-25 behavior.
         term-char-mode-point-at-process-mark ; Emacs-25 behavior.
-        (bufs (cl-loop for b in (mapcar 'buffer-name (buffer-list))
+        (bufs (cl-loop for b in (mapcar #'buffer-name (buffer-list))
                        when (helm-switch-to-repl-interactive-buffer-p
                              b (with-current-buffer b major-mode))
                        collect b)))
