@@ -69,7 +69,6 @@ Conversely, Eshell need not be included."
   nil)
 
 (cl-defgeneric helm-switch-to-repl-interactive-buffer-p (_buffer _mode)
-
   "Return non-nil if buffer is a REPL in the given mode."
   nil)
 
@@ -127,7 +126,7 @@ CANDIDATE's directory is used outside of `helm-find-files'."
       (helm-switch-to-repl-cd-repl major-mode))))
 
 (defun helm-run-switch-to-repl ()
-  "Run switch to REPL action from `helm-source-find-files' or `helm-type-file' sources."
+  "Run switch to REPL action from `helm-source-find-files' or \"Helm type file\" sources."
   (interactive)
   (with-helm-alive-p
     (helm-exit-and-execute-action 'helm-switch-to-repl)))
@@ -136,8 +135,8 @@ CANDIDATE's directory is used outside of `helm-find-files'."
 ;;;###autoload
 (defun helm-switch-to-repl-setup ()
   "Install `helm-switch-to-repl' actions.
-It adds it to `helm-find-files' and other `helm-type-file' sources such as
-`helm-locate'."
+It adds it to `helm-find-files' and other \"Helm type file\"
+sources such as `helm-locate'."
   (interactive)
   ;; `helm-type-file':
   (add-to-list 'helm-type-file-actions
@@ -164,17 +163,21 @@ It adds it to `helm-find-files' and other `helm-type-file' sources such as
 (declare-function eshell-reset "esh-mode.el")
 
 (cl-defmethod helm-switch-to-repl-cd-repl ((_mode (eql eshell-mode)))
+  "Change Eshell directory to `helm-ff-default-directory'."
   (eshell/cd helm-ff-default-directory)
   (eshell-reset))
 
 (cl-defmethod helm-switch-to-repl-new-repl ((_mode (eql eshell-mode)))
+  "Spawn new Eshell."
   (eshell helm-current-prefix-arg))
 
 (cl-defmethod helm-switch-to-repl-interactive-buffer-p ((buffer t) (_mode (eql eshell-mode)))
+  "Return non-nil if BUFFER is an Eshell."
   (with-current-buffer buffer
     (helm-switch-to-repl--has-next-prompt? #'eshell-next-prompt)))
 
 (cl-defmethod helm-switch-to-repl-shell-alive-p ((_mode (eql eshell-mode)))
+  "Return non-nil when a process is running inside Eshell."
   (get-buffer-process (current-buffer)))
 
 
@@ -183,6 +186,7 @@ It adds it to `helm-find-files' and other `helm-type-file' sources such as
 (push 'shell-mode helm-switch-to-repl-delayed-execution-modes)
 
 (cl-defmethod helm-switch-to-repl-cd-repl ((_mode (eql shell-mode)))
+  "Change shell directory to `helm-ff-default-directory'."
   (goto-char (point-max))
   (comint-delete-input)
   (insert (helm-switch-to-repl--format-cd))
@@ -193,16 +197,19 @@ It adds it to `helm-find-files' and other `helm-type-file' sources such as
   (cd helm-ff-default-directory))
 
 (cl-defmethod helm-switch-to-repl-new-repl ((_mode (eql shell-mode)))
+  "Spawn new shell."
   (shell (helm-aif (and helm-current-prefix-arg
                         (prefix-numeric-value
                          helm-current-prefix-arg))
              (format "*shell<%s>*" it))))
 
 (cl-defmethod helm-switch-to-repl-interactive-buffer-p ((buffer t) (_mode (eql shell-mode)))
+  "Return non-nil if BUFFER is a shell."
   (with-current-buffer buffer
     (helm-switch-to-repl--has-next-prompt? #'comint-next-prompt)))
 
 (cl-defmethod helm-switch-to-repl-shell-alive-p ((_mode (eql shell-mode)))
+  "Return non-nil when a process is running inside a shell."
   (save-excursion
     (comint-goto-process-mark)
     (or (null comint-last-prompt)
@@ -218,6 +225,7 @@ It adds it to `helm-find-files' and other `helm-type-file' sources such as
 (push 'sly-mrepl-mode helm-switch-to-repl-delayed-execution-modes)
 
 (cl-defmethod helm-switch-to-repl-cd-repl ((_mode (eql sly-mrepl-mode)))
+  "Change SLY directory to `helm-ff-default-directory'."
   (let ((directory helm-ff-default-directory))
     (sly-change-directory directory)
     ;; REVIEW: `sly-change-directory' does not change the
@@ -225,14 +233,17 @@ It adds it to `helm-find-files' and other `helm-type-file' sources such as
     (cd-absolute directory)))
 
 (cl-defmethod helm-switch-to-repl-new-repl ((_mode (eql sly-repl-mode)))
+  "Spawn new SLY."
   (sly))
 
 (cl-defmethod helm-switch-to-repl-interactive-buffer-p ((buffer t)
                                                         (_mode (eql sly-mrepl-mode)))
+  "Return non-nil if BUFFER is a SLY REPL."
   (with-current-buffer buffer
     (helm-switch-to-repl--has-next-prompt? #'comint-next-prompt)))
 
 (cl-defmethod helm-switch-to-repl-shell-alive-p ((_mode (eql sly-mrepl-mode)))
+  "Return non-nil when a process is running inside a SLY REPL."
   (helm-switch-to-repl-shell-alive-p 'shell-mode))
 
 
@@ -247,12 +258,14 @@ It adds it to `helm-find-files' and other `helm-type-file' sources such as
 (push 'term-mode helm-switch-to-repl-delayed-execution-modes)
 
 (cl-defmethod helm-switch-to-repl-cd-repl ((_mode (eql term-mode)))
+  "Change term buffer directory to `helm-ff-default-directory'."
   (goto-char (point-max))
   (insert (helm-switch-to-repl--format-cd))
   (term-char-mode)
   (term-send-input))
 
 (cl-defmethod helm-switch-to-repl-new-repl ((_mode (eql term-mode)))
+  "Spawn new term buffer."
   (ansi-term (getenv "SHELL")
              (helm-aif (and helm-current-prefix-arg
                             (prefix-numeric-value
@@ -261,10 +274,12 @@ It adds it to `helm-find-files' and other `helm-type-file' sources such as
   (term-line-mode))
 
 (cl-defmethod helm-switch-to-repl-interactive-buffer-p ((buffer t) (_mode (eql term-mode)))
+  "Return non-nil if BUFFER is a term buffer."
   (with-current-buffer buffer
     (helm-switch-to-repl--has-next-prompt? #'term-next-prompt)))
 
 (cl-defmethod helm-switch-to-repl-shell-alive-p ((_mode (eql term-mode)))
+  "Return non-nil when a process is running inside a term buffer."
   (save-excursion
     (goto-char (term-process-mark))
     (not (looking-back "\\$ " (- (point) 2)))))
