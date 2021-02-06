@@ -1,11 +1,11 @@
 ;;; helm-switch-to-repl.el --- Helm action to switch directory in REPLs -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2020 Pierre Neidhardt
+;; Copyright (C) 2020, 2021 Pierre Neidhardt
 
 ;; Author: Pierre Neidhardt <mail@ambrevar.xyz>
 ;; Maintainer: Pierre Neidhardt <mail@ambrevar.xyz>
 ;; URL: https://github.com/emacs-helm/helm-switch-to-repl
-;; Version: 0.1.1
+;; Version: 0.1.2
 ;; Package-Requires: ((emacs "26.1") (helm "3"))
 
 ;; This file is not part of GNU Emacs.
