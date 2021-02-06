@@ -226,11 +226,14 @@ sources such as `helm-locate'."
 
 (cl-defmethod helm-switch-to-repl-cd-repl ((_mode (eql sly-mrepl-mode)))
   "Change SLY directory to `helm-ff-default-directory'."
-  (let ((directory helm-ff-default-directory))
-    (sly-change-directory directory)
-    ;; REVIEW: `sly-change-directory' does not change the
-    ;; REPL's dir, do it here.
-    (cd-absolute directory)))
+  (let ((dir helm-ff-default-directory))
+    ;; From `sly-mrepl-set-directory':
+    (sly-mrepl--eval-for-repl
+     `(slynk:set-default-directory
+       (slynk-backend:filename-to-pathname
+        ,(sly-to-lisp-filename dir))))
+    (sly-mrepl--insert-note (format "Setting directory to %s" dir))
+    (cd dir)))
 
 (cl-defmethod helm-switch-to-repl-new-repl ((_mode (eql sly-repl-mode)))
   "Spawn new SLY."
